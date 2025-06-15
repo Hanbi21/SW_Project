@@ -1,0 +1,685 @@
+import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+import java.time.LocalDate;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+class DateFormatCheck {
+	private static final Scanner scanner = new Scanner(System.in);
+	
+	public static boolean isValidDate(String dateStr) {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		sdf.setLenient(false);
+		try {
+			sdf.parse(dateStr);
+			return true;
+		} catch (ParseException e) {
+			return false;
+		}
+	}
+	
+	public static String getValidDateInput(String prompt) {
+		while (true) {
+			System.out.print(prompt);
+			String date = scanner.nextLine();
+			if (isValidDate(date)) {
+				return date;
+			} else {
+				System.out.println("잘못된 날짜 형식입니다. 다시 입력해주세요.");
+			}
+		}
+	}
+}
+
+class User {
+    private String id;
+    private String password;
+    private String name;
+    private String phone;
+    private String email;
+
+    public User(String id, String password, String name, String phone, String email) {
+        this.id = id;
+        this.password = password;
+        this.name = name;
+        this.phone = phone;
+        this.email = email;
+    }
+
+    public String getId() { return id; }
+    public String getPassword() { return password; }
+    public String getName() { return name; }
+    public String getPhone() { return phone; }
+    public String getEmail() { return email; }
+}
+
+class LoginSystem {
+    private HashMap<String, User> userId;
+    private HashMap<String, String> userEmail;
+    private HashMap<String, String> userPhone;
+    private Scanner scanner;
+
+    public LoginSystem() {
+    	userId = new HashMap<>();
+    	userEmail = new HashMap<>();
+    	userPhone = new HashMap<>();
+        scanner = new Scanner(System.in);
+    }
+
+    public String systemStart() {
+    	System.out.println("=== 기억 조각에 접속하신 것을 환영합니다! ===");
+        while (true) {
+            System.out.println("[1] 로그인");
+            System.out.println("[2] 회원가입");
+            System.out.print("선택: ");
+            String input = scanner.nextLine();
+
+            if (!input.equals("1") && !input.equals("2")) {
+                System.out.println("잘못된 입력입니다. 다시 시도하세요.");
+                continue;
+            }
+
+            System.out.println("----------");
+            System.out.print("아이디: ");
+            String id = scanner.nextLine();
+            System.out.print("비밀번호: ");
+            String password = scanner.nextLine();
+
+            if (input.equals("1")) {
+                if (login(id, password)) {
+                    System.out.println("\n로그인 성공!");
+                    return id;
+                } else {
+                    System.out.println("등록되지 않은 사용자이거나 비밀번호가 틀렸습니다.");
+                    System.out.println("----------");
+                }
+            } else if (input.equals("2")) {
+            	System.out.print("이름: ");
+            	String name = scanner.nextLine();
+                System.out.print("전화번호: ");
+                String phone = scanner.nextLine();
+                System.out.print("이메일: ");
+                String email = scanner.nextLine();
+
+                if (join(id, password, name, phone, email)) {
+                    System.out.println("회원가입 성공! 로그인할 수 있습니다.");
+                    System.out.println("----------");
+                }
+            }
+        }
+    }
+
+    private boolean login(String id, String password) {
+        if (userId.containsKey(id)) {
+            User user = userId.get(id);
+            return user.getPassword().equals(password);
+        }
+        return false;
+    }
+
+    private boolean join(String id, String password, String name, String phone, String email) {
+        boolean isDuplicate = false;
+
+        if (userId.containsKey(id)) {
+            System.out.println("이미 사용 중인 아이디입니다.");
+            isDuplicate = true;
+        }
+        if (userPhone.containsKey(phone)) {
+            System.out.println("이미 등록된 전화번호입니다.");
+            isDuplicate = true;
+        }
+        if (userEmail.containsKey(email)) {
+            System.out.println("이미 등록된 이메일입니다.");
+            isDuplicate = true;
+        }
+
+        if (isDuplicate) return false;
+
+        User newUser = new User(id, password, name, phone, email);
+        userId.put(id, newUser);
+        userPhone.put(phone, id);
+        userEmail.put(email, id);
+        return true;
+    }
+}
+
+class Schedule {
+    private Scanner scanner = new Scanner(System.in);
+    private Map<String, List<String>> scheduleMap = new HashMap<>(); // 날짜별 일정 저장
+    public Map<String, List<String>> getScheduleMap() {
+        return scheduleMap;
+    }
+
+    public void addSchedule() {
+        String date = DateFormatCheck.getValidDateInput("일정을 추가할 날짜를 입력하세요. (yyyy-MM-dd): ");
+        
+        System.out.print("일정 내용 입력: ");
+        String content = scanner.nextLine();
+
+        // 날짜에 해당하는 리스트가 없으면 새로 생성
+        List<String> schedules = scheduleMap.getOrDefault(date, new ArrayList<>());
+        schedules.add(content);
+        scheduleMap.put(date, schedules);
+
+        System.out.println(date + "에 일정이 추가되었습니다.");
+    }
+
+    public void viewSchedule() {
+        System.out.println("\n📌 등록된 일정 목록");
+        if (scheduleMap.isEmpty()) {
+            System.out.println("등록된 일정이 없습니다.");
+        } else {
+            for (String date : scheduleMap.keySet()) {
+                System.out.println(date);
+                List<String> schedules = scheduleMap.get(date);
+                for (int i = 0; i < schedules.size(); i++) {
+                    System.out.println("  " + (i + 1) + ". " + schedules.get(i));
+                }
+            }
+        }
+    }
+
+    public void deleteSchedule() {
+    	String date = DateFormatCheck.getValidDateInput("삭제할 일정 날짜를 입력하세요. (yyyy-MM-dd): ");
+
+        if (scheduleMap.containsKey(date)) {
+            List<String> schedules = scheduleMap.get(date);
+            if (schedules.isEmpty()) {
+                System.out.println("해당 날짜에 등록된 일정이 없습니다.");
+                return;
+            }
+
+            System.out.println("해당 날짜의 일정 목록:");
+            for (int i = 0; i < schedules.size(); i++) {
+                System.out.println((i + 1) + ". " + schedules.get(i));
+            }
+
+            System.out.print("삭제할 일정 번호를 입력하세요: ");
+            try {
+                int index = Integer.parseInt(scanner.nextLine()) - 1;
+                if (index >= 0 && index < schedules.size()) {
+                    String removed = schedules.remove(index);
+                    System.out.println("일정 \"" + removed + "\"이(가) 삭제되었습니다.");
+
+                    // 만약 모든 일정이 삭제되었으면 날짜 자체를 삭제
+                    if (schedules.isEmpty()) {
+                        scheduleMap.remove(date);
+                    }
+                } else {
+                    System.out.println("잘못된 번호입니다.");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("숫자를 입력해주세요.");
+            }
+        } else {
+            System.out.println("잘못된 양식입니다.");
+        }
+    }
+    
+    public void checkTodaySchedule() {
+        Notification notification = new Notification();
+        notification.checkTodaySchedule(scheduleMap);
+    }
+
+    public void scheduleMenu() {
+        while (true) {
+        	System.out.println("----------");
+            System.out.println("[1] 일정 추가 \n[2] 일정 조회 \n[3] 일정 삭제 \n[0] 뒤로가기");
+            System.out.print("사용할 기능을 선택하세요: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    addSchedule();
+                    break;
+                case "2":
+                    viewSchedule();
+                    break;
+                case "3":
+                    deleteSchedule();
+                    break;
+                case "0":
+                    return;
+                default:
+                    System.out.println("잘못된 선택입니다. 다시 입력하세요.");
+            }
+        }
+    }
+}
+
+class TodoList {
+    private Scanner scanner = new Scanner(System.in);
+    private Map<String, String> todoMap = new HashMap<>(); // 날짜별 To-do 항목 저장
+    private Map<String, Boolean> todoStatus = new HashMap<>(); // To-do 완료 여부 저장
+    public Map<String, String> getTodoMap() {
+        return todoMap;
+    }
+
+    public void addTodo() {
+        System.out.print("추가할 To-do 항목을 입력하세요: ");
+        String todoItem = scanner.nextLine();
+
+        String date = DateFormatCheck.getValidDateInput("To-do 항목에 대한 날짜를 입력하세요. (yyyy-MM-dd): ");
+
+        todoMap.put(date + ": " + todoItem, todoItem);
+        todoStatus.put(date + ": " + todoItem, false); // 기본 완료 상태는 false
+        System.out.println(todoItem + "이(가) To-do 목록에 추가되었습니다.");
+    }
+
+    public void viewTodo() {
+        System.out.println("\n📌 등록된 To-do 목록");
+        if (todoMap.isEmpty()) {
+            System.out.println("등록된 To-do 항목이 없습니다.");
+        } else {
+            for (String todoItem : todoMap.keySet()) {
+                String status = todoStatus.get(todoItem) ? "완료" : "미완료";
+                System.out.printf("%s - [%s]\n", todoItem, status);
+            }
+        }
+    }
+
+    public void markCompleted() {
+        System.out.print("완료할 To-do 항목을 입력하세요. (yyyy-MM-dd: 항목명): ");
+        String todoItem = scanner.nextLine();
+
+        if (todoStatus.containsKey(todoItem)) {
+            todoStatus.put(todoItem, true);
+            System.out.println(todoItem + "이(가) 완료되었습니다.");
+        } else {
+            System.out.println("해당 To-do 항목이 존재하지 않습니다.");
+        }
+    }
+
+    public void unmarkCompleted() {
+        System.out.print("완료 취소할 To-do 항목을 입력하세요. (yyyy-MM-dd: 항목명): ");
+        String todoItem = scanner.nextLine();
+
+        if (todoStatus.containsKey(todoItem)) {
+            todoStatus.put(todoItem, false);
+            System.out.println(todoItem + "이(가) 미완료 상태로 변경되었습니다.");
+        } else {
+            System.out.println("해당 To-do 항목이 존재하지 않습니다.");
+        }
+    }
+
+    public void deleteTodo() {
+        System.out.print("삭제할 To-do 항목을 입력하세요. (yyyy-MM-dd: 항목명): ");
+        String todoItem = scanner.nextLine();
+
+        if (todoMap.containsKey(todoItem)) {
+            todoMap.remove(todoItem);
+            todoStatus.remove(todoItem);
+            System.out.println(todoItem + "이(가) 삭제되었습니다.");
+        } else {
+            System.out.println("해당 To-do 항목이 존재하지 않습니다.");
+        }
+    }
+
+    public void checkTodayTodo() {
+        Notification notification = new Notification();
+        notification.checkTodayTodo(todoMap);
+    }
+    
+    public void todoMenu() {
+        while (true) {
+        	System.out.println("----------");
+            System.out.println("[1] To-do 항목 추가 \n[2] To-do 항목 조회 \n[3] 완료 상태 변경 \n[4] 완료 취소 \n[5] To-do 항목 삭제 \n[0] 뒤로가기");
+            System.out.print("사용할 기능을 선택하세요: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    addTodo();
+                    break;
+                case "2":
+                    viewTodo();
+                    break;
+                case "3":
+                    markCompleted();
+                    break;
+                case "4":
+                    unmarkCompleted();
+                    break;
+                case "5":
+                    deleteTodo();
+                    break;
+                case "0":
+                    return;
+                default:
+                    System.out.println("잘못된 선택입니다. 다시 입력하세요.");
+            }
+        }
+    }
+}
+
+class Diary {
+    private Scanner scanner = new Scanner(System.in);
+    private Map<String, String> diaryMap = new HashMap<>(); // 날짜별 다이어리 내용 저장
+
+    public void addDiary() {
+    	String date = DateFormatCheck.getValidDateInput("다이어리를 추가할 날짜를 입력하세요. (yyyy-MM-dd): ");
+
+        System.out.println("다이어리 내용을 입력하세요 (내용 입력 후 $로 종료):");
+        StringBuilder content = new StringBuilder();
+        while (true) {
+            String line = scanner.nextLine();
+            if (line.equals("$")) {
+                break;
+            }
+            content.append(line).append("\n");
+        }
+
+        diaryMap.put(date, content.toString());
+
+        System.out.println(date + "에 다이어리가 추가되었습니다.");
+    }
+
+    public void viewDiary() {
+        System.out.println("\n📌 등록된 다이어리 목록");
+        if (diaryMap.isEmpty()) {
+            System.out.println("등록된 다이어리가 없습니다.");
+        } else {
+            for (String date : diaryMap.keySet()) {
+                String content = diaryMap.get(date);
+                System.out.printf("%s\n %s\n", date, content);
+            }
+        }
+    }
+
+    public void modifyDiary() {
+    	String date = DateFormatCheck.getValidDateInput("수정할 다이어리 날짜를 입력하세요. (yyyy-MM-dd): ");
+
+        if (diaryMap.containsKey(date)) {
+            System.out.println("현재 내용: " + diaryMap.get(date));
+            System.out.println("새로운 내용을 입력하세요 (enter 후 $로 종료):");
+            StringBuilder newContent = new StringBuilder();
+            while (true) {
+                String line = scanner.nextLine();
+                if (line.equals("$")) {
+                    break;
+                }
+                newContent.append(line).append("\n");
+            }
+
+            diaryMap.put(date, newContent.toString());
+
+            System.out.println(date + "의 다이어리 항목이 수정되었습니다.");
+        } else {
+            System.out.println("해당 날짜에 등록된 다이어리 항목이 없습니다.");
+        }
+    }
+
+    public void deleteDiary() {
+    	String date = DateFormatCheck.getValidDateInput("삭제할 다이어리 날짜를 입력하세요. (yyyy-MM-dd): ");
+
+        if (diaryMap.containsKey(date)) {
+            diaryMap.remove(date);
+            System.out.println(date + "의 다이어리 항목이 삭제되었습니다.");
+        } else {
+            System.out.println("해당 날짜에 등록된 다이어리 항목이 없습니다.");
+        }
+    }
+
+    public void diaryMenu() {
+        while (true) {
+        	System.out.println("----------");
+            System.out.println("[1] 다이어리 추가 \n[2] 다이어리 조회 \n[3] 다이어리 수정 \n[4] 다이어리 삭제 \n[0] 뒤로가기");
+            System.out.print("사용할 기능을 선택하세요: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    addDiary();
+                    break;
+                case "2":
+                    viewDiary();
+                    break;
+                case "3":
+                    modifyDiary();
+                    break;
+                case "4":
+                    deleteDiary();
+                    break;
+                case "0":
+                    return;
+                default:
+                    System.out.println("잘못된 선택입니다. 다시 입력하세요.");
+            }
+        }
+    }
+}
+
+class SetLetter {
+	private String title; // 편지 제목
+    private String content; // 편지 내용
+    private LocalDate sendDate; // 편지 열람 가능 날짜
+
+    public SetLetter(String title, String content, LocalDate sendDate) {
+        this.title = title;
+        this.content = content;
+        this.sendDate = sendDate;
+    }
+
+    public String getTitle() { return title; }
+    public String getContent() { return content; }
+    public LocalDate getSendDate() { return sendDate; }
+    public boolean canRead(LocalDate currentDate) {
+        return !sendDate.isAfter(currentDate); // 현재 날짜가 편지의 열람 날짜 이후인지 확인
+    }
+}
+
+class Letter {
+    private Scanner scanner = new Scanner(System.in);
+    private Map<String, SetLetter> letterContent = new HashMap<>(); // 날짜별 편지 저장
+    private Map<LocalDate, String> letterDate = new HashMap<>(); // 날짜 목록
+    public Map<LocalDate, String> getLetterDates() {
+        return letterDate;
+    }
+
+    public Map<String, SetLetter> getLetters() { return letterContent; }
+
+    // 편지 작성
+    public void writeLetter() {
+    	System.out.print("편지 제목을 입력하세요: ");
+        String title = scanner.nextLine();
+        
+        String date = DateFormatCheck.getValidDateInput("편지를 보낼 날짜를 입력하세요. (yyyy-MM-dd): ");
+        LocalDate sendDate = LocalDate.parse(date);
+
+        System.out.println("편지 내용을 작성하세요 (enter 후 $로 종료):");
+        StringBuilder content = new StringBuilder();
+        while (true) {
+            String line = scanner.nextLine();
+            if (line.equals("$")) {
+                break;
+            }
+            content.append(line).append("\n");
+        }
+
+        SetLetter letter = new SetLetter(title, content.toString(), sendDate);
+        letterContent.put(sendDate.toString(), letter); // 편지 저장
+        letterDate.put(sendDate, title); // 날짜 목록에 편지 저장
+        System.out.println("편지가 작성되었습니다. " + sendDate + " 이후에 열람할 수 있습니다.");
+    }
+
+    // 편지 조회
+    public void viewLetter() {
+    	if (letterDate.isEmpty()) {
+            System.out.println("작성된 편지가 없습니다.");
+            return;
+        }
+    	// 작성된 편지들의 날짜 목록 출력
+    	System.out.println("\n📌 작성된 편지 목록");
+    	letterDate.forEach((date, title) -> {
+        	System.out.println(date + " - " + title);
+        });
+        
+    	String date = DateFormatCheck.getValidDateInput("열람할 편지의 날짜를 입력하세요. (yyyy-MM-dd): ");
+        SetLetter letter = letterContent.get(date);
+
+        if (letter != null) {
+            LocalDate currentDate = LocalDate.now();
+            if (letter.canRead(currentDate)) {
+            	System.out.println("편지 제목: " + letter.getTitle());
+                System.out.print("편지 내용 \n:" + letter.getContent());
+            } else {
+                System.out.println("이 편지는 " + letter.getSendDate() + " 이후에 열람 가능합니다.");
+            }
+        } else {
+            System.out.println("해당 날짜에 편지가 존재하지 않습니다.");
+        }
+    }
+
+    // 편지 삭제
+    public void deleteLetter() {
+    	String date = DateFormatCheck.getValidDateInput("삭제할 편지의 날짜를 입력하세요. (yyyy-MM-dd): ");
+
+        if (letterContent.containsKey(date)) {
+        	letterContent.remove(date);
+            letterDate.remove(LocalDate.parse(date)); // 날짜 목록에서도 삭제
+            System.out.println(date + "의 편지가 삭제되었습니다.");
+        } else {
+            System.out.println("해당 날짜에 편지가 존재하지 않습니다.");
+        }
+    }
+    
+    public void checkTodayLetter() {
+        Notification notification = new Notification();
+        notification.checkTodayLetter(letterDate, letterContent);
+    }
+
+    public void letterMenu() {
+        while (true) {
+        	System.out.println("----------");
+            System.out.println("[1] 편지 작성 \n[2] 편지 조회 \n[3] 편지 삭제 \n[0] 뒤로가기");
+            System.out.print("사용할 기능을 선택하세요: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    writeLetter();
+                    break;
+                case "2":
+                    viewLetter();
+                    break;
+                case "3":
+                    deleteLetter();
+                    break;
+                case "0":
+                    return;
+                default:
+                    System.out.println("잘못된 선택입니다. 다시 입력하세요.");
+            }
+        }
+    }
+}
+
+class Notification {
+	public void checkTodaySchedule(Map<String, List<String>> scheduleMap) {
+        String today = LocalDate.now().toString();
+        if (scheduleMap.containsKey(today)) {
+            System.out.println("🎉 오늘의 일정");
+            System.out.println(scheduleMap.get(today));
+        } else {
+            System.out.println("오늘은 일정이 없습니다.");
+        }
+    }
+
+    public void checkTodayTodo(Map<String, String> todoMap) {
+        String today = LocalDate.now().toString();
+        boolean found = false;
+        for (String key : todoMap.keySet()) {
+            if (key.startsWith(today)) {
+                if (!found) {
+                    System.out.println("🎉 오늘의 To-do List");
+                    found = true;
+                }
+                System.out.println(todoMap.get(key));
+            }
+        }
+        if (!found) {
+            System.out.println("오늘의 To-do 항목이 없습니다.");
+        }
+    }
+
+    public void checkTodayLetter(Map<LocalDate, String> letterDates, Map<String, SetLetter> letters) {
+        LocalDate today = LocalDate.now();
+        boolean found = false;
+
+        for (Map.Entry<LocalDate, String> entry : letterDates.entrySet()) {
+            if (entry.getKey().isEqual(today)) {
+                SetLetter letter = letters.get(entry.getKey().toString());
+                if (letter != null && letter.canRead(today)) {
+                    if (!found) {
+                        System.out.println("🎉 오늘 열람 가능한 편지가 있습니다");
+                        found = true;
+                    }
+                    System.out.println("제목: " + letter.getTitle());
+                    System.out.println(letter.getContent());
+                }
+            }
+        }
+
+        if (!found) {
+            System.out.println("오늘 열람 가능한 편지가 없습니다.");
+        }
+    }
+}
+
+public class MemoryPiece {
+    public static void main(String[] args) {
+        // 로그인 시스템 시작
+        LoginSystem loginSystem = new LoginSystem();
+        String id = loginSystem.systemStart();
+
+        System.out.println(id + "님의 데이터를 불러옵니다... ");
+
+        Schedule schedule = new Schedule();
+        TodoList todoList = new TodoList();
+        Diary diary = new Diary();
+        Letter letter = new Letter();
+        
+        // 로그인 후 즉시 알림 받기
+        System.out.println("\n=== 오늘의 알림 ===");
+        Notification notification = new Notification();
+        notification.checkTodaySchedule(schedule.getScheduleMap()); 
+        notification.checkTodayTodo(todoList.getTodoMap()); 
+        notification.checkTodayLetter(letter.getLetterDates(), letter.getLetters());
+        
+        // 기능 선택 메뉴
+        Scanner scanner = new Scanner(System.in);
+        while (true) {
+        	System.out.print("\n=== " + id + "님의 기억 조각 시스템 ===");
+            System.out.println("\n[1] 일정 \n[2] To-do List \n[3] 다이어리 \n[4] 미래에 보내는 편지 \n[0] 종료");
+            System.out.print("사용할 기능을 선택하세요: ");
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    // 일정 기능 실행
+                	schedule.scheduleMenu();
+                    break;
+                case "2":
+                    // To-do List 기능 실행
+                    todoList.todoMenu();
+                    break;
+                case "3":
+                    // 다이어리 기능 실행
+                    diary.diaryMenu();
+                    break;
+                case "4":
+                    // 미래에 보내는 편지 기능 실행
+                    letter.letterMenu();
+                    break;
+                case "0":
+                    System.out.println("프로그램을 종료합니다.");
+                    return; // 종료
+                default:
+                    System.out.println("잘못된 선택입니다. 다시 입력하세요.");
+            }
+        }
+    }
+}
